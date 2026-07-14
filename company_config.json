@@ -1,0 +1,24 @@
+{
+  "company_name": "Matrix Professional Services",
+  "tagline": "FIELD MANAGEMENT",
+  "system_name": "SMART CONNECT",
+  "primary_color": "#640080",
+  "secondary_color": "#1a4fa0",
+  "agent_label": "סוכן",
+  "agents_label": "סוכנים",
+  "store_label": "חנות",
+  "stores_label": "חנויות",
+  "manager_email": "raniazoulay@gmail.com",
+  "agents": [
+    {
+      "name": "טכנאי שטח 1",
+      "username": "Tech1",
+      "password": "123456"
+    },
+    {
+      "name": "טכנאי שטח 2",
+      "username": "Tech2",
+      "password": "123456"
+    }
+  ]
+}

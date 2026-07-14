@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ניהול סוכנים — {{ cfg.company_name if cfg else 'SmartConnect' }}</title>
+<style>
+:root{
+  --primary:#003280;--primary2:#0051c8;
+  --bg:#f0f4ff;--card:#fff;--border:#e2e8f0;
+  --text:#1e293b;--muted:#64748b;--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+     background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+
+/* ── HEADER ── */
+.header{background:linear-gradient(135deg,#001f5b 0%,#003280 60%,#0051c8 100%);
+        padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+        position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.2)}
+.header-title{font-size:20px;font-weight:900;color:#fff;letter-spacing:1px}
+.header-sub{font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px}
+.header-actions{display:flex;gap:10px;align-items:center}
+.hbtn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);
+      color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;
+      cursor:pointer;text-decoration:none;font-family:inherit;transition:all 0.2s;white-space:nowrap}
+.hbtn:hover{background:rgba(255,255,255,0.28)}
+.hbtn.active{background:rgba(255,255,255,0.32);border-color:rgba(255,255,255,0.55)}
+
+/* ── TOOLBAR ── */
+.toolbar{padding:14px 20px;display:flex;gap:10px;align-items:center;
+         background:#fff;border-bottom:1px solid var(--border);
+         position:sticky;top:56px;z-index:90}
+.btn-add-agent{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;
+               border:none;border-radius:10px;padding:10px 18px;font-size:14px;font-weight:700;
+               cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:6px}
+
+/* ── BODY ── */
+.body{padding:20px;display:flex;flex-direction:column;gap:20px}
+
+/* ── AGENT SECTION ── */
+.agent-section{background:#fff;border:1px solid var(--border);border-radius:16px;
+               overflow:hidden;box-shadow:0 1px 6px rgba(0,0,50,0.05)}
+.agent-section-header{display:flex;align-items:center;justify-content:space-between;
+                       padding:16px 20px;background:#f8faff;border-bottom:1px solid var(--border);
+                       cursor:pointer;user-select:none}
+.agent-section-header:hover{background:#eff6ff}
+.agent-left{display:flex;align-items:center;gap:12px}
+.agent-avatar{width:40px;height:40px;border-radius:50%;
+              background:linear-gradient(135deg,var(--primary),var(--primary2));
+              display:flex;align-items:center;justify-content:center;
+              font-size:18px;color:#fff;font-weight:900;flex-shrink:0}
+.agent-name{font-size:17px;font-weight:800;color:var(--primary)}
+.agent-username{font-size:12px;color:var(--muted)}
+.agent-right{display:flex;align-items:center;gap:8px}
+.agent-badge{font-size:12px;font-weight:700;background:#eff6ff;color:var(--primary);
+             border:1px solid #bfdbfe;border-radius:20px;padding:3px 12px}
+.chevron{font-size:18px;color:var(--muted);transition:transform 0.2s;flex-shrink:0}
+.chevron.open{transform:rotate(180deg)}
+
+/* action buttons in header */
+.abtn{border-radius:9px;padding:7px 14px;font-size:12px;font-weight:700;
+      cursor:pointer;font-family:inherit;border:1.5px solid;transition:all 0.15s;
+      white-space:nowrap;display:flex;align-items:center;gap:4px}
+.abtn-add{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
+.abtn-add:hover{background:#dcfce7}
+.abtn-excel{background:#fdf4ff;border-color:#e9d5ff;color:#7c3aed}
+.abtn-excel:hover{background:#f3e8ff}
+.abtn-edit{background:#eff6ff;border-color:#bfdbfe;color:var(--primary)}
+.abtn-edit:hover{background:#dbeafe}
+.abtn-del{background:#fef2f2;border-color:#fecaca;color:#dc2626}
+.abtn-del:hover{background:#fee2e2}
+
+/* ── TABLE ── */
+.agent-body{overflow:hidden;max-height:0;transition:max-height 0.3s ease}
+.agent-body.open{max-height:9999px}
+.agent-table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th{background:#f1f5f9;color:var(--muted);font-size:11px;font-weight:700;
+   text-align:right;padding:10px 14px;border-bottom:2px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8faff}
+.day-badge{display:inline-block;background:#eff6ff;color:var(--primary);
+           border:1px solid #bfdbfe;border-radius:20px;padding:2px 10px;
+           font-size:11px;font-weight:700}
+.region-chip{display:inline-block;background:#f0fdf4;color:#15803d;
+             border:1px solid #bbf7d0;border-radius:20px;padding:2px 8px;
+             font-size:11px;font-weight:600;max-width:120px;overflow:hidden;
+             text-overflow:ellipsis;white-space:nowrap}
+.no-val{color:var(--muted);font-style:italic;font-size:12px}
+.edit-btn{background:#eff6ff;border:1px solid #bfdbfe;color:var(--primary);
+          border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;
+          cursor:pointer;font-family:inherit}
+.edit-btn:hover{background:#dbeafe}
+.del-btn{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;
+         border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;
+         cursor:pointer;font-family:inherit;margin-right:4px}
+.del-btn:hover{background:#fee2e2}
+.add-cust-row{padding:12px 16px;border-top:1px solid var(--border);background:#fafbff}
+.add-cust-btn{background:rgba(0,50,128,0.06);border:1.5px dashed rgba(0,50,128,0.25);
+              color:var(--primary);border-radius:10px;padding:8px 18px;
+              font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+              transition:all 0.2s}
+.add-cust-btn:hover{background:rgba(0,50,128,0.12)}
+.empty-agent{padding:30px 20px;text-align:center;color:var(--muted);font-size:14px}
+
+/* ── LOADING ── */
+.loading{text-align:center;padding:60px 20px;color:var(--muted)}
+.spinner{display:inline-block;width:28px;height:28px;border:3px solid #e2e8f0;
+         border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;
+         display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:480px;
+       box-shadow:0 20px 60px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto}
+.modal h3{font-size:18px;font-weight:800;color:var(--primary);margin-bottom:20px;
+          padding-bottom:12px;border-bottom:1px solid var(--border)}
+.form-row{margin-bottom:14px}
+label.fl{display:block;font-size:12px;font-weight:700;color:var(--muted);
+         margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+input.fi,select.fi,textarea.fi{width:100%;border:1.5px solid var(--border);border-radius:10px;
+               padding:10px 12px;font-size:14px;font-family:inherit;
+               outline:none;transition:border 0.2s;color:var(--text);background:#fff}
+input.fi:focus,select.fi:focus{border-color:var(--primary)}
+.hint{font-size:11px;color:var(--muted);margin-top:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-actions{display:flex;gap:10px;margin-top:22px;justify-content:flex-end}
+.btn-cancel{background:#f1f5f9;border:1px solid var(--border);color:var(--muted);
+            border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;
+            cursor:pointer;font-family:inherit}
+.btn-save{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;
+          border:none;border-radius:10px;padding:10px 24px;font-size:14px;
+          font-weight:700;cursor:pointer;font-family:inherit}
+.btn-save:disabled{opacity:0.5;cursor:not-allowed}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* ── WEEKS ── */
+.weeks-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.wbtn{background:#f1f5f9;border:2px solid #e2e8f0;border-radius:10px;
+      padding:8px 0;font-size:14px;font-weight:800;font-family:inherit;
+      cursor:pointer;transition:all 0.15s;color:#374151;min-width:48px;
+      text-align:center;user-select:none}
+.wbtn:hover{background:#dbeafe;border-color:#93c5fd;color:var(--primary)}
+.wbtn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+
+/* ── UPLOAD AREA ── */
+.upload-area{border:2px dashed #93c5fd;border-radius:12px;padding:20px;
+             text-align:center;background:#f0f9ff;cursor:pointer;
+             transition:all 0.2s;position:relative;margin-top:6px}
+.upload-area:hover{border-color:var(--primary);background:#eff6ff}
+.upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:30px;margin-bottom:6px}
+.upload-text{font-size:13px;color:var(--muted);font-weight:600}
+.upload-filename{font-size:12px;color:var(--primary);margin-top:4px;font-weight:700}
+.import-result{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;
+               padding:10px 14px;margin-top:10px;font-size:13px;color:#15803d}
+.import-error{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;
+              padding:10px 14px;margin-top:10px;font-size:13px;color:#dc2626}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+       background:#1e293b;color:#fff;border-radius:12px;padding:12px 22px;
+       font-size:14px;font-weight:600;z-index:9999;opacity:0;
+       transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+@media(max-width:600px){
+  .grid2{grid-template-columns:1fr}
+  .agent-right{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="header-title">{{ cfg.company_name if cfg else 'SmartConnect' }}</div>
+    <div class="header-sub">פאנל ניהול — סוכנים</div>
+  </div>
+  <div class="header-actions">
+    <a href="/admin/customers" class="hbtn">📋 לקוחות</a>
+    <a href="/admin/agents" class="hbtn active">👤 סוכנים</a>
+    <a href="/admin/reports" class="hbtn">📊 דוחות</a>
+    <a href="/admin/logout" class="hbtn">יציאה</a>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="btn-add-agent" onclick="openAddAgentModal()">+ הוסף סוכן חדש</button>
+  <span id="page-count" style="font-size:13px;color:var(--muted)"></span>
+</div>
+
+<!-- BODY -->
+<div class="body" id="page-body">
+  <div class="loading" id="page-loading">
+    <div class="spinner"></div><br>טוען נתונים...
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+
+<!-- ══════════════ MODAL: הוסף / ערוך סוכן ══════════════ -->
+<div class="overlay" id="agent-modal" style="display:none" onclick="if(event.target===this)closeAgentModal()">
+  <div class="modal">
+    <h3 id="agent-modal-title">➕ הוסף סוכן חדש</h3>
+    <input type="hidden" id="am-id">
+
+    <div class="grid2">
+      <div class="form-row">
+        <label class="fl">שם מלא *</label>
+        <input class="fi" id="am-name" placeholder="ישראל ישראלי">
+      </div>
+      <div class="form-row">
+        <label class="fl">שם משתמש *</label>
+        <input class="fi" id="am-username" placeholder="israel" dir="ltr">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="fl">סיסמה <span id="am-pass-hint" style="font-weight:400;text-transform:none;font-size:11px;color:var(--muted)"></span></label>
+      <input class="fi" id="am-password" type="password" placeholder="סיסמה" dir="ltr" autocomplete="new-password">
+    </div>
+
+    <!-- Excel upload (only for new agent) -->
+    <div id="am-excel-section">
+      <hr class="divider">
+      <div class="form-row">
+        <label class="fl">📄 קובץ לקוחות Excel (אופציונלי)</label>
+        <div class="upload-area" id="am-upload-area">
+          <input type="file" id="am-excel-file" accept=".xlsx,.xls" onchange="onAgentFileSelected(this)">
+          <div class="upload-icon">📄</div>
+          <div class="upload-text">גרור קובץ Excel לכאן או לחץ לבחירה</div>
+          <div class="upload-filename" id="am-upload-name" style="display:none"></div>
+        </div>
+        <div id="am-import-result" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAgentModal()">ביטול</button>
+      <button class="btn-save" id="am-save-btn" onclick="saveAgent()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ MODAL: הוסף / ערוך לקוח ══════════════ -->
+<div class="overlay" id="cust-modal" style="display:none" onclick="if(event.target===this)closeCustModal()">
+  <div class="modal">
+    <h3 id="cust-modal-title">➕ הוסף לקוח</h3>
+    <input type="hidden" id="cm-id">
+    <input type="hidden" id="cm-agent-id">
+    <input type="hidden" id="cm-region-default">
+
+    <div class="form-row">
+      <label class="fl">שם לקוח *</label>
+      <input class="fi" id="cm-name" placeholder="שם החנות / לקוח">
+    </div>
+    <div class="grid2">
+      <div class="form-row">
+        <label class="fl">עיר</label>
+        <input class="fi" id="cm-city" placeholder="עיר">
+      </div>
+      <div class="form-row">
+        <label class="fl">אזור</label>
+        <input class="fi" id="cm-region" placeholder="אזור">
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="form-row">
+        <label class="fl">יום ביקור</label>
+        <select class="fi" id="cm-day">
+          <option value="">ללא</option>
+          <option value="א">ראשון (א)</option>
+          <option value="ב">שני (ב)</option>
+          <option value="ג">שלישי (ג)</option>
+          <option value="ד">רביעי (ד)</option>
+          <option value="ה">חמישי (ה)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="fl">יום אספקה</label>
+        <input class="fi" id="cm-delivery" placeholder="ימי אספקה">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="fl">שבועות פעילים</label>
+      <div class="weeks-row" id="cm-weeks">
+        <button type="button" class="wbtn" data-w="1" onclick="toggleWeek(this)">ש1</button>
+        <button type="button" class="wbtn" data-w="2" onclick="toggleWeek(this)">ש2</button>
+        <button type="button" class="wbtn" data-w="3" onclick="toggleWeek(this)">ש3</button>
+        <button type="button" class="wbtn" data-w="4" onclick="toggleWeek(this)">ש4</button>
+        <button type="button" class="wbtn" data-w="5" onclick="toggleWeek(this)">ש5</button>
+        <button type="button" class="wbtn" data-w="6" onclick="toggleWeek(this)">ש6</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="fl">קוד לקוח (BP Code)</label>
+      <input class="fi" id="cm-card-code" placeholder="קוד" dir="ltr">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCustModal()">ביטול</button>
+      <button class="btn-save" id="cm-save-btn" onclick="saveCust()">💾 שמור</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const HEB_DAYS = {א:'ראשון',ב:'שני',ג:'שלישי',ד:'רביעי',ה:'חמישי'};
+let agentsData = [];  // [{id, name, username, regions, customers:[...]}]
+let agentExcelFile = null;
+
+// ─────────────────────────────────────────────────────────
+//  LOAD
+// ─────────────────────────────────────────────────────────
+// שמור מצב (scroll + אילו סוכנים פתוחים) לפני render, שחזר אחרי
+function renderPreserving(){
+  const scrollY = window.scrollY;
+  // שמור אילו sections סגורים
+  const closedIds = new Set();
+  document.querySelectorAll('[id^="body-"]').forEach(el => {
+    if(!el.classList.contains('open'))
+      closedIds.add(el.id.replace('body-',''));
+  });
+  render();
+  // סגור מחדש את מה שהיה סגור
+  closedIds.forEach(id => {
+    const b = document.getElementById(`body-${id}`);
+    const c = document.getElementById(`chev-${id}`);
+    if(b) b.classList.remove('open');
+    if(c) c.classList.remove('open');
+  });
+  window.scrollTo(0, scrollY);
+}
+
+async function loadAll(){
+  try{
+    const r = await fetch('/admin/api/agents');
+    agentsData = await r.json();
+    // Load customers per agent in parallel
+    await Promise.all(agentsData.map(a => loadAgentCustomers(a)));
+    renderPreserving();
+  } catch(e){
+    console.error('[loadAll] error:', e);
+    const pl = document.getElementById('page-loading');
+    if(pl) pl.textContent = 'שגיאה בטעינה';
+  }
+}
+
+async function loadAgentCustomers(agent){
+  try{
+    const r = await fetch(`/admin/api/agents/${agent.id}/customers`);
+    const res = await r.json();
+    agent.customers = res.customers || [];
+  } catch(e){ agent.customers = []; }
+}
+
+// ─────────────────────────────────────────────────────────
+//  RENDER
+// ─────────────────────────────────────────────────────────
+function render(){
+  const body = document.getElementById('page-body');
+  const pl = document.getElementById('page-loading');
+  if(pl) pl.style.display = 'none';
+  const pc = document.getElementById('page-count');
+  if(pc) pc.textContent = `${agentsData.length} סוכנים`;
+
+  body.innerHTML = agentsData.map(a => `
+    <div class="agent-section" id="sec-${a.id}">
+      <!-- Agent Header -->
+      <div class="agent-section-header" onclick="toggleSection(${a.id})">
+        <div class="agent-left">
+          <div class="agent-avatar">${esc(a.name).charAt(0)}</div>
+          <div>
+            <div class="agent-name">${esc(a.name)}</div>
+            <div class="agent-username">@${esc(a.username)}</div>
+          </div>
+        </div>
+        <div class="agent-right" onclick="event.stopPropagation()">
+          <span class="agent-badge">👥 ${a.customers.length} לקוחות</span>
+          <button class="abtn abtn-add" onclick="openAddCustModal(${a.id})">+ הוסף לקוח</button>
+          <button class="abtn abtn-excel" onclick="openExcelForAgent(${a.id},'${esc(a.name)}')">📥 Excel</button>
+          <button class="abtn abtn-edit" onclick="openEditAgentModal(${a.id})">✏️ עריכה</button>
+          <button class="abtn" style="background:#fff7ed;border-color:#fed7aa;color:#ea580c" onclick="refreshAgent(${a.id})">🔄 עדכן</button>
+          <button class="abtn abtn-del" onclick="deleteAgent(${a.id},'${esc(a.name)}')">🗑 מחק</button>
+          <span class="chevron open" id="chev-${a.id}">▼</span>
+        </div>
+      </div>
+      <!-- Customers Body -->
+      <div class="agent-body open" id="body-${a.id}">
+        ${a.customers.length === 0
+          ? `<div class="empty-agent">אין לקוחות לסוכן זה עדיין — <button class="add-cust-btn" onclick="openAddCustModal(${a.id})">+ הוסף לקוח</button></div>`
+          : `<div class="agent-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>שם לקוח</th>
+                  <th>עיר</th>
+                  <th>אזור</th>
+                  <th>יום ביקור</th>
+                  <th>שבועות</th>
+                  <th>אספקה</th>
+                  <th>פעולות</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${a.customers.map(c => `
+                  <tr>
+                    <td><strong>${esc(c.name)}</strong></td>
+                    <td>${esc(c.city)||'<span class="no-val">—</span>'}</td>
+                    <td><span class="region-chip">${esc(c.region)||'—'}</span></td>
+                    <td>${c.day ? `<span class="day-badge">${esc(HEB_DAYS[c.day]||c.day)} (${c.day})</span>` : '<span class="no-val">ללא יום</span>'}</td>
+                    <td><small style="color:var(--muted)">${c.weeks_display||'—'}</small></td>
+                    <td><small style="color:var(--muted)">${esc(c.delivery_day)||'—'}</small></td>
+                    <td>
+                      <button class="edit-btn" onclick='openEditCustModal(${JSON.stringify(c)})'>✏️ עריכה</button>
+                      <button class="del-btn" onclick="deleteCust(${c.id},'${esc(c.name)}',${a.id})">🗑</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div class="add-cust-row">
+            <button class="add-cust-btn" onclick="openAddCustModal(${a.id})">+ הוסף לקוח לסוכן זה</button>
+          </div>`
+        }
+      </div>
+    </div>
+  `).join('') || '<div class="loading">אין סוכנים — לחץ "+ הוסף סוכן חדש"</div>';
+}
+
+function toggleSection(id){
+  const body = document.getElementById(`body-${id}`);
+  const chev = document.getElementById(`chev-${id}`);
+  body.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+// ─────────────────────────────────────────────────────────
+//  AGENT MODAL
+// ─────────────────────────────────────────────────────────
+function openAddAgentModal(){
+  document.getElementById('agent-modal-title').textContent = '➕ הוסף סוכן חדש';
+  document.getElementById('am-id').value = '';
+  document.getElementById('am-name').value = '';
+  document.getElementById('am-username').value = '';
+  document.getElementById('am-password').value = '';
+  document.getElementById('am-pass-hint').textContent = '(חובה לסוכן חדש)';
+  document.getElementById('am-excel-section').style.display = 'block';
+  document.getElementById('am-excel-file').value = '';
+  document.getElementById('am-upload-name').style.display = 'none';
+  document.getElementById('am-import-result').style.display = 'none';
+  agentExcelFile = null;
+  // ← תמיד מאפס את כפתור השמירה לפונקציה הנכונה
+  const btn = document.getElementById('am-save-btn');
+  btn.onclick = saveAgent;
+  btn.textContent = '💾 שמור';
+  btn.disabled = false;
+  document.getElementById('agent-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('am-name').focus(), 80);
+}
+
+function openEditAgentModal(id){
+  const a = agentsData.find(x => x.id === id);
+  if(!a) return;
+  document.getElementById('agent-modal-title').textContent = '✏️ עריכת סוכן';
+  document.getElementById('am-id').value = id;
+  document.getElementById('am-name').value = a.name;
+  document.getElementById('am-username').value = a.username;
+  document.getElementById('am-password').value = '';
+  document.getElementById('am-pass-hint').textContent = '(השאר ריק לאי-שינוי)';
+  document.getElementById('am-excel-section').style.display = 'none';
+  document.getElementById('am-import-result').style.display = 'none';
+  const btn = document.getElementById('am-save-btn');
+  btn.onclick = saveAgent;
+  btn.textContent = '💾 שמור';
+  btn.disabled = false;
+  document.getElementById('agent-modal').style.display = 'flex';
+}
+
+function closeAgentModal(){ document.getElementById('agent-modal').style.display = 'none'; }
+
+async function saveAgent(){
+  const id       = document.getElementById('am-id').value;
+  const name     = document.getElementById('am-name').value.trim();
+  const username = document.getElementById('am-username').value.trim();
+  const password = document.getElementById('am-password').value.trim();
+  if(!name || !username){ toast('שם ושם משתמש הם שדות חובה', '#dc2626'); return; }
+  if(!id && !password){ toast('סיסמה חובה לסוכן חדש', '#dc2626'); return; }
+
+  const btn = document.getElementById('am-save-btn');
+  btn.disabled = true; btn.textContent = 'שומר...';
+
+  const method = id ? 'PUT' : 'POST';
+  const url    = id ? `/admin/api/agents/${id}` : '/admin/api/agents';
+  const r = await fetch(url, {method, headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({name, username, password, regions: ''})});
+  const res = await r.json();
+
+  btn.disabled = false; btn.textContent = '💾 שמור';
+
+  if(!res.ok){ toast(res.error || 'שגיאה', '#dc2626'); return; }
+
+  const newAgentId = res.id || id;
+
+  // If Excel file attached → upload now, then reload
+  if(!id && agentExcelFile && newAgentId){
+    btn.disabled = true; btn.textContent = 'מייבא לקוחות...';
+    const fd = new FormData();
+    fd.append('file', agentExcelFile);
+    const er = await fetch(`/admin/api/agents/${newAgentId}/import-excel`, {method:'POST', body:fd});
+    const eres = await er.json();
+    btn.disabled = false; btn.textContent = '💾 שמור';
+    const resDiv = document.getElementById('am-import-result');
+    resDiv.style.display = 'block';
+    if(eres.ok){
+      resDiv.className = 'import-result';
+      resDiv.textContent = `✅ ${eres.message}`;
+      toast(`סוכן נוסף עם ${eres.inserted} לקוחות ✓`);
+      closeAgentModal();           // סגור מיד
+      await loadAll();             // טען הכל — אחרי הסגירה
+    } else {
+      resDiv.className = 'import-error';
+      resDiv.textContent = '❌ ' + (eres.error || 'שגיאה בייבוא');
+    }
+  } else {
+    toast(id ? 'סוכן עודכן ✓' : 'סוכן נוסף ✓');
+    closeAgentModal();
+    await loadAll();
+  }
+}
+
+function onAgentFileSelected(input){
+  agentExcelFile = input.files[0];
+  const el = document.getElementById('am-upload-name');
+  if(agentExcelFile){ el.textContent = '✓ ' + agentExcelFile.name; el.style.display = 'block'; }
+}
+
+// ─────────────────────────────────────────────────────────
+//  EXCEL UPLOAD (for existing agent from button)
+// ─────────────────────────────────────────────────────────
+let excelTargetAgentId = null;
+function openExcelForAgent(id, name){
+  excelTargetAgentId = id;
+  // Reuse agent modal in "excel only" mode
+  document.getElementById('agent-modal-title').textContent = `📥 ייבוא Excel — ${name}`;
+  document.getElementById('am-id').value = id;
+  document.getElementById('am-name').value = agentsData.find(a=>a.id===id)?.name || '';
+  document.getElementById('am-username').value = agentsData.find(a=>a.id===id)?.username || '';
+  document.getElementById('am-password').value = '';
+  document.getElementById('am-pass-hint').textContent = '(השאר ריק לאי-שינוי)';
+  document.getElementById('am-excel-section').style.display = 'block';
+  document.getElementById('am-excel-file').value = '';
+  document.getElementById('am-upload-name').style.display = 'none';
+  document.getElementById('am-import-result').style.display = 'none';
+  agentExcelFile = null;
+  // Override save to only upload excel
+  document.getElementById('am-save-btn').onclick = uploadExcelForExisting;
+  document.getElementById('am-save-btn').textContent = '📥 ייבא';
+  document.getElementById('agent-modal').style.display = 'flex';
+}
+
+async function uploadExcelForExisting(){
+  if(!agentExcelFile){ toast('בחר קובץ Excel תחילה', '#dc2626'); return; }
+  const id  = document.getElementById('am-id').value;
+  const btn = document.getElementById('am-save-btn');
+  btn.disabled = true; btn.textContent = 'מייבא...';
+  const fd = new FormData();
+  fd.append('file', agentExcelFile);
+  const r = await fetch(`/admin/api/agents/${id}/import-excel`, {method:'POST', body:fd});
+  const res = await r.json();
+  const resDiv = document.getElementById('am-import-result');
+  resDiv.style.display = 'block';
+  btn.disabled = false; btn.textContent = '📥 ייבא';
+  if(res.ok){
+    resDiv.className = 'import-result';
+    resDiv.textContent = `✅ ${res.message}`;
+    toast(`יובאו ${res.inserted} לקוחות ✓`);
+    closeAgentModal();
+    document.getElementById('am-save-btn').onclick = saveAgent;
+    document.getElementById('am-save-btn').textContent = '💾 שמור';
+    await loadAll();
+  } else {
+    resDiv.className = 'import-error';
+    resDiv.textContent = '❌ ' + (res.error || 'שגיאה');
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+//  REFRESH SINGLE AGENT
+// ─────────────────────────────────────────────────────────
+async function refreshAgent(agentId){
+  const agent = agentsData.find(a => a.id === agentId);
+  if(!agent) return;
+  await loadAgentCustomers(agent);
+  // re-render only that agent's section
+  const sec = document.getElementById(`sec-${agentId}`);
+  if(!sec){ render(); return; }
+  const isOpen = document.getElementById(`body-${agentId}`)?.classList.contains('open');
+  render();
+  // restore open state
+  if(!isOpen){
+    const body = document.getElementById(`body-${agentId}`);
+    const chev = document.getElementById(`chev-${agentId}`);
+    if(body) body.classList.remove('open');
+    if(chev) chev.classList.remove('open');
+  }
+  toast(`רשימת לקוחות של ${agent.name} עודכנה ✓`);
+}
+
+// ─────────────────────────────────────────────────────────
+//  DELETE AGENT
+// ─────────────────────────────────────────────────────────
+async function deleteAgent(id, name){
+  if(!confirm(`מחיקת סוכן "${name}"?\n\nהסוכן יימחק, לקוחותיו יישארו במערכת.`)) return;
+  const r = await fetch(`/admin/api/agents/${id}`, {method:'DELETE'});
+  const res = await r.json();
+  if(res.ok){ toast('סוכן נמחק'); await loadAll(); }
+  else toast(res.error || 'שגיאה', '#dc2626');
+}
+
+// ─────────────────────────────────────────────────────────
+//  CUSTOMER MODAL
+// ─────────────────────────────────────────────────────────
+function resetCustModal(){
+  document.getElementById('cm-id').value = '';
+  document.getElementById('cm-name').value = '';
+  document.getElementById('cm-city').value = '';
+  document.getElementById('cm-region').value = '';
+  document.getElementById('cm-day').value = '';
+  document.getElementById('cm-delivery').value = '';
+  document.getElementById('cm-card-code').value = '';
+  document.querySelectorAll('.wbtn').forEach(b => b.classList.remove('active'));
+}
+
+function openAddCustModal(agentId){
+  resetCustModal();
+  document.getElementById('cust-modal-title').textContent = '➕ הוסף לקוח';
+  document.getElementById('cm-agent-id').value = agentId;
+  // Pre-fill region with agent's first region
+  const agent = agentsData.find(a => a.id === agentId);
+  const firstRegion = agent?.regions?.split(',')[0]?.trim() || '';
+  document.getElementById('cm-region').value = firstRegion;
+  document.getElementById('cust-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('cm-name').focus(), 80);
+}
+
+function openEditCustModal(c){
+  resetCustModal();
+  document.getElementById('cust-modal-title').textContent = '✏️ עריכת לקוח';
+  document.getElementById('cm-id').value = c.id;
+  document.getElementById('cm-name').value = c.name;
+  document.getElementById('cm-city').value = c.city || '';
+  document.getElementById('cm-region').value = c.region || '';
+  document.getElementById('cm-day').value = c.day || '';
+  document.getElementById('cm-delivery').value = c.delivery_day || '';
+  document.getElementById('cm-card-code').value = c.card_code || '';
+  for(let i=1;i<=6;i++){
+    if(c[`week_${i}`]===1){
+      document.querySelector(`.wbtn[data-w="${i}"]`)?.classList.add('active');
+    }
+  }
+  document.getElementById('cust-modal').style.display = 'flex';
+}
+
+function closeCustModal(){ document.getElementById('cust-modal').style.display = 'none'; }
+
+function toggleWeek(btn){ btn.classList.toggle('active'); }
+
+async function saveCust(){
+  const id       = document.getElementById('cm-id').value;
+  const agentId  = document.getElementById('cm-agent-id').value;
+  const name     = document.getElementById('cm-name').value.trim();
+  const city     = document.getElementById('cm-city').value.trim();
+  const region   = document.getElementById('cm-region').value.trim();
+  const day      = document.getElementById('cm-day').value;
+  const delivery = document.getElementById('cm-delivery').value.trim();
+  const cardCode = document.getElementById('cm-card-code').value.trim();
+  if(!name){ toast('שם לקוח חובה', '#dc2626'); return; }
+
+  const weeks = [];
+  document.querySelectorAll('.wbtn.active').forEach(b => weeks.push(parseInt(b.dataset.w)));
+
+  const btn = document.getElementById('cm-save-btn');
+  btn.disabled = true; btn.textContent = 'שומר...';
+
+  const payload = {name, city, address:'', region, day, delivery_day:delivery, card_code:cardCode, weeks};
+  console.log('[saveCust] id=', id, 'payload=', JSON.stringify(payload));
+
+  let r, res;
+  if(id){
+    r = await fetch(`/admin/api/customers/${id}`, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+  } else {
+    r = await fetch('/admin/api/customers', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+  }
+  res = await r.json();
+  console.log('[saveCust] response:', res, 'status:', r.status);
+  btn.disabled = false; btn.textContent = '💾 שמור';
+
+  if(res.ok || res.id){
+    closeCustModal();
+    if(id){
+      // עריכת לקוח קיים — עדכן ישירות בזיכרון (ללא re-fetch) כדי שהלקוח לא יזוז
+      const HEB = {א:'ראשון',ב:'שני',ג:'שלישי',ד:'רביעי',ה:'חמישי'};
+      const custId = parseInt(id);
+      for(const agent of agentsData){
+        const idx = agent.customers.findIndex(c => c.id === custId);
+        if(idx !== -1){
+          agent.customers[idx] = {
+            ...agent.customers[idx],
+            name, city, region,
+            day: day||'',
+            day_name: HEB[day]||'—',
+            delivery_day: delivery||'',
+            card_code: cardCode||'',
+            week_1: weeks.includes(1)?1:0,
+            week_2: weeks.includes(2)?1:0,
+            week_3: weeks.includes(3)?1:0,
+            week_4: weeks.includes(4)?1:0,
+            week_5: weeks.includes(5)?1:0,
+            week_6: weeks.includes(6)?1:0,
+            weeks_display: weeks.length ? weeks.map(w=>`ש${w}`).join(' ') : '—'
+          };
+          break;
+        }
+      }
+      toast('לקוח עודכן ✓');
+      renderPreserving();
+    } else {
+      // לקוח חדש — טען הכל מחדש
+      if(agentId && region){
+        const agent = agentsData.find(a => a.id === parseInt(agentId));
+        if(agent){
+          const currentRegions = (agent.regions||'').split(',').map(x=>x.trim()).filter(Boolean);
+          if(!currentRegions.includes(region)){
+            currentRegions.push(region);
+            await fetch(`/admin/api/agents/${agentId}`, {
+              method:'PUT', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({name:agent.name, username:agent.username, password:'', regions:currentRegions.join(',')})
+            });
+          }
+        }
+      }
+      toast('לקוח נוסף ✓');
+      await loadAll();
+    }
+  } else {
+    toast(res.error || 'שגיאה', '#dc2626');
+  }
+}
+
+async function deleteCust(id, name, agentId){
+  if(!confirm(`מחיקת לקוח "${name}"?`)) return;
+  const r = await fetch(`/admin/api/customers/${id}`, {method:'DELETE'});
+  const res = await r.json();
+  if(res.ok){ toast('לקוח נמחק'); await loadAll(); }
+  else toast(res.error || 'שגיאה', '#dc2626');
+}
+
+// ─────────────────────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg, bg='#15803d'){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = bg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){ closeAgentModal(); closeCustModal(); }
+});
+
+loadAll();
+</script>
+</body>
+</html>

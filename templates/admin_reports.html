@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>דוחות — {{ cfg.company_name if cfg else 'SmartConnect' }}</title>
+<style>
+:root{
+  --primary:#003280;--primary2:#0051c8;
+  --bg:#f0f4ff;--card:#fff;--border:#e2e8f0;
+  --text:#1e293b;--muted:#64748b;--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+     background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#001f5b 0%,#003280 60%,#0051c8 100%);
+        padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+        position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.2)}
+.header-title{font-size:20px;font-weight:900;color:#fff;letter-spacing:1px}
+.header-sub{font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px}
+.header-actions{display:flex;gap:10px;align-items:center}
+.hbtn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);
+      color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;
+      cursor:pointer;text-decoration:none;font-family:inherit;transition:all 0.2s;white-space:nowrap}
+.hbtn:hover{background:rgba(255,255,255,0.28)}
+.hbtn.active{background:rgba(255,255,255,0.3);border-color:rgba(255,255,255,0.5)}
+.hbtn.danger{background:rgba(220,38,38,0.3);border-color:rgba(220,38,38,0.4)}
+
+/* PAGE */
+.page{max-width:900px;margin:30px auto;padding:0 16px 80px}
+.page-title{font-size:22px;font-weight:900;color:var(--primary);margin-bottom:6px}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+
+/* AGENT CARD */
+.agent-card{background:var(--card);border-radius:var(--r);
+            box-shadow:0 2px 8px rgba(0,0,0,0.07);margin-bottom:24px;overflow:hidden}
+.agent-header{background:linear-gradient(135deg,var(--primary),var(--primary2));
+              padding:16px 20px;display:flex;align-items:center;justify-content:space-between;
+              cursor:pointer;user-select:none}
+.agent-name{font-size:17px;font-weight:800;color:#fff}
+.agent-badge{background:rgba(255,255,255,0.2);color:#fff;border-radius:20px;
+             padding:4px 14px;font-size:13px;font-weight:700}
+.agent-body{display:none;padding:0}
+.agent-body.open{display:block}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead{background:#f8fafc}
+th{padding:12px 16px;text-align:right;font-size:12px;font-weight:700;
+   color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8faff}
+.badge-count{display:inline-block;background:#dbeafe;color:#1d4ed8;
+             border-radius:20px;padding:3px 12px;font-weight:700;font-size:13px}
+.date-chip{color:var(--muted);font-size:13px}
+.city-chip{color:var(--muted);font-size:13px}
+.rank-1 td:first-child::before{content:"🥇 "}
+.rank-2 td:first-child::before{content:"🥈 "}
+.rank-3 td:first-child::before{content:"🥉 "}
+
+/* EMPTY */
+.empty{padding:40px;text-align:center;color:var(--muted);font-size:14px}
+
+/* SEARCH BAR */
+.search-bar{padding:14px 16px;border-bottom:1px solid var(--border);background:#fafbff}
+.search-bar input{width:100%;border:1.5px solid var(--border);border-radius:10px;
+                  padding:9px 14px;font-size:14px;font-family:inherit;outline:none}
+.search-bar input:focus{border-color:var(--primary)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">📊 דוחות ביקורים</div>
+    <div class="header-sub">{{ cfg.company_name if cfg else 'SmartConnect' }} Admin Panel</div>
+  </div>
+  <div class="header-actions">
+    <a href="/admin/customers" class="hbtn">📋 לקוחות</a>
+    <a href="/admin/agents" class="hbtn">👤 סוכנים</a>
+    <a href="/admin/reports" class="hbtn active">📊 דוחות</a>
+    <a href="/admin/logout" class="hbtn danger">יציאה</a>
+  </div>
+</div>
+
+<div class="page">
+  <div class="page-title">דוח ביקורים לפי סוכן</div>
+  <div class="page-sub">מסודר מהכי הרבה ביקורים לפחות · כולל תאריך ביקור אחרון</div>
+
+  {% if not agents %}
+    <div class="empty">אין נתוני ביקורים במערכת עדיין.</div>
+  {% else %}
+    {% for agent_id, agent in agents.items() %}
+    <div class="agent-card">
+      <div class="agent-header" onclick="toggle({{ agent_id }})">
+        <div class="agent-name">👤 {{ agent.name }}</div>
+        <div class="agent-badge">{{ agent.customers|length }} לקוחות</div>
+      </div>
+      <div class="agent-body" id="body-{{ agent_id }}">
+
+        <div class="search-bar">
+          <input type="text" placeholder="חיפוש לקוח..."
+                 oninput="filterTable(this, 'tbl-{{ agent_id }}')" />
+        </div>
+
+        {% if agent.customers %}
+        <table id="tbl-{{ agent_id }}">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>שם לקוח</th>
+              <th>עיר</th>
+              <th>כמות ביקורים</th>
+              <th>ביקור אחרון</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in agent.customers %}
+            <tr class="{% if loop.index0 == 0 %}rank-1{% elif loop.index0 == 1 %}rank-2{% elif loop.index0 == 2 %}rank-3{% endif %}">
+              <td style="color:var(--muted);font-size:12px;width:40px">{{ loop.index }}</td>
+              <td style="font-weight:600">{{ c.name }}</td>
+              <td class="city-chip">{{ c.city }}</td>
+              <td><span class="badge-count">{{ c.visit_count }}</span></td>
+              <td class="date-chip">{{ c.last_visit }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty">אין ביקורים מתועדים לסוכן זה.</div>
+        {% endif %}
+
+      </div>
+    </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<script>
+function toggle(id) {
+  const body = document.getElementById('body-' + id);
+  body.classList.toggle('open');
+}
+
+// open first agent by default
+document.addEventListener('DOMContentLoaded', () => {
+  const first = document.querySelector('.agent-body');
+  if (first) first.classList.add('open');
+});
+
+function filterTable(input, tableId) {
+  const q = input.value.trim().toLowerCase();
+  const rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+  rows.forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
