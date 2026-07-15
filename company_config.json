@@ -20,5 +20,6 @@
       "username": "Tech2",
       "password": "123456"
     }
-  ]
+  ],
+  "gps_enabled": true
 }
