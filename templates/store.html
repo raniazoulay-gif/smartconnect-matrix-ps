@@ -155,6 +155,16 @@ textarea::placeholder { color:#94a3b8; }
       <div class="time-box"><div class="time-lbl">כניסה</div><div class="time-val">{{ visit.check_in_time[:5] }}</div></div>
       <div class="time-box"><div class="time-lbl">יציאה</div><div class="time-val">{{ visit.check_out_time[:5] }}</div></div>
     </div>
+    {% if visit.checkin_lat or visit.checkout_lat %}
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      {% if visit.checkin_lat and visit.checkin_lng %}
+      <a href="https://maps.google.com/?q={{ visit.checkin_lat }},{{ visit.checkin_lng }}" target="_blank" rel="noopener" style="flex:1;min-width:130px;text-align:center;background:#ecfdf5;border:1px solid #6ee7b7;color:#047857;border-radius:10px;padding:10px;font-size:13px;font-weight:700;text-decoration:none">📍 מיקום כניסה</a>
+      {% endif %}
+      {% if visit.checkout_lat and visit.checkout_lng %}
+      <a href="https://maps.google.com/?q={{ visit.checkout_lat }},{{ visit.checkout_lng }}" target="_blank" rel="noopener" style="flex:1;min-width:130px;text-align:center;background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;border-radius:10px;padding:10px;font-size:13px;font-weight:700;text-decoration:none">📍 מיקום יציאה</a>
+      {% endif %}
+    </div>
+    {% endif %}
     {% if visit.duration_minutes %}
     <div class="duration-badge">⏱️ שהייה כוללת: {% if visit.duration_minutes >= 60 %}{{ visit.duration_minutes // 60 }}ש' {{ visit.duration_minutes % 60 }}ד'{% else %}{{ visit.duration_minutes }} דקות{% endif %}
     {% if visit.pause_duration_minutes %} | ⏸ השהייה: {{ visit.pause_duration_minutes }} דקות | 🤝 פגישה נטו: {{ visit.duration_minutes - visit.pause_duration_minutes }} דקות{% endif %}
@@ -172,6 +182,9 @@ textarea::placeholder { color:#94a3b8; }
     {% if visit.paused_at %}<br>⏸ כרגע בהשהייה מ-{{ visit.paused_at[:5] }}{% endif %}
     </div>
     {% if visit.is_phone %}<div class="phone-badge">📞 פגישה טלפונית</div>{% endif %}
+    {% if visit.checkin_lat and visit.checkin_lng %}
+    <a href="https://maps.google.com/?q={{ visit.checkin_lat }},{{ visit.checkin_lng }}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:12px;background:#ecfdf5;border:1px solid #6ee7b7;color:#047857;border-radius:10px;padding:10px;font-size:13px;font-weight:700;text-decoration:none">📍 מיקום כניסה — פתח ב-Google Maps</a>
+    {% endif %}
 
     {% else %}
     <div class="no-visit">❌ הסוכן לא ביקר בחנות זו היום</div>
@@ -372,6 +385,7 @@ textarea::placeholder { color:#94a3b8; }
 <script>
 const CUSTOMER_ID = {{ customer.id }};
 const VISIT_DATE = '{{ visit_date }}';
+const GPS_ENABLED = {{ 'true' if cfg and cfg.gps_enabled else 'false' }};
 const MY_NAME = '{{ user.name }}';
 
 // אתחול כפתור שמור — ירוק אם כבר יש הערה שמורה
@@ -390,10 +404,32 @@ function showToast(msg, duration=2500) {
   setTimeout(() => t.style.display = 'none', duration);
 }
 
+// מיקום GPS — חובה בכניסה וביציאה. אם המשתמש חוסם/אין קליטה — הפעולה נחסמת.
+function getLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) { reject(new Error('no-geo')); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      err => reject(err),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  });
+}
+
 async function doCheckin() {
   const btn = document.querySelector('.btn-checkin');
+  let loc = { lat: null, lng: null };
+  if (GPS_ENABLED) {
+    btn.disabled = true; btn.textContent = '📍 מאתר מיקום...';
+    try { loc = await getLocation(); }
+    catch (e) {
+      showToast('❌ יש לאשר גישה למיקום כדי לבצע כניסה');
+      btn.disabled = false; btn.textContent = '📥 כניסה לחנות';
+      return;
+    }
+  }
   btn.disabled = true; btn.textContent = '⏳ רושם כניסה...';
-  const res = await fetch('/api/checkin', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({customer_id:CUSTOMER_ID, visit_date:VISIT_DATE}) });
+  const res = await fetch('/api/checkin', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({customer_id:CUSTOMER_ID, visit_date:VISIT_DATE, lat:loc.lat, lng:loc.lng}) });
   const data = await res.json();
   if (data.status === 'ok') {
     showToast('✅ נכנסת לחנות בשעה ' + data.time.slice(0,5));
@@ -454,8 +490,18 @@ async function doCheckout() {
     return;
   }
   const btn = document.querySelector('.btn-checkout');
+  let loc = { lat: null, lng: null };
+  if (GPS_ENABLED) {
+    btn.disabled = true; btn.textContent = '📍 מאתר מיקום...';
+    try { loc = await getLocation(); }
+    catch (e) {
+      showToast('❌ יש לאשר גישה למיקום כדי לבצע יציאה');
+      btn.disabled = false; btn.textContent = '📤 יציאה מהחנות';
+      return;
+    }
+  }
   btn.disabled = true; btn.textContent = '⏳ רושם יציאה...';
-  const res = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({customer_id:CUSTOMER_ID, visit_date:VISIT_DATE, notes}) });
+  const res = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({customer_id:CUSTOMER_ID, visit_date:VISIT_DATE, notes, lat:loc.lat, lng:loc.lng}) });
   const data = await res.json();
   if (data.status === 'ok') {
     showToast('✅ יצאת מהחנות — שהייה ' + data.duration_str);
