@@ -324,7 +324,7 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
   <div class="stats-row">
     <div class="stat-card active" id="stat-all" onclick="filterStores('all')">
       <div class="stat-num">{{ customers|length }}</div>
-      <div class="stat-lbl">חנויות היום</div>
+      <div class="stat-lbl">קריאות היום</div>
     </div>
     <div class="stat-card" id="stat-visited" onclick="filterStores('visited')">
       <div class="stat-num" style="color:var(--success)">{{ done_count.n }}</div>
@@ -337,7 +337,7 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
   </div>
 
   {% if customers %}
-  <div class="section-title">חנויות לביקור</div>
+  <div class="section-title">קריאות לביקור</div>
 
   {% for store in customers %}
   {% set visit = visits_map.get(store.id) %}
@@ -394,7 +394,7 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
         <rect x="46" y="42" width="10" height="10" rx="2" fill="#a5b4fc"/>
       </svg>
     </div>
-    <p>אין חנויות לביקור ביום זה</p>
+    <p>אין קריאות לביקור ביום זה</p>
   </div>
   {% endif %}
 </div>
@@ -403,7 +403,7 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
 <div class="modal-overlay" id="notesModal">
   <div class="modal">
     <h3 id="modalTitle">📝 הערות</h3>
-    <textarea id="modalNotes" placeholder="כתוב הערה על הביקור בחנות זו..."></textarea>
+    <textarea id="modalNotes" placeholder="כתוב הערה על הביקור בקריאה זו..."></textarea>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal()">✖ בטל</button>
       <button class="modal-save" onclick="saveModalNotes()">💾 שמור הערה</button>
