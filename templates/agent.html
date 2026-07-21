@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="/static/logo.png">
 <meta name="theme-color" content="#00327d">
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/static/sw.js')}</script>
-<title>{% if viewed_agent %}{{ viewed_agent.name }}{% else %}{{ user.name }}{% endif %} — לקוחות היום</title>
+<title>{% if viewed_agent %}{{ viewed_agent.name }}{% else %}{{ user.name }}{% endif %} — קריאות היום</title>
 <style>
 :root {
   --bg:#eef1f8; --bg2:#ffffff;
@@ -41,7 +41,7 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
 .manager-badge { display:inline-block; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.35); color:white; border-radius:20px; padding:2px 8px; font-size:10px; font-weight:700; margin-bottom:3px; }
 .action-btn-sm { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:rgba(255,255,255,0.9); border-radius:10px; padding:8px 12px; font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; transition:all 0.2s; white-space:nowrap; flex-shrink:0; font-family:inherit; }
 .action-btn-sm:hover { background:rgba(255,255,255,0.25); color:white; }
-/* שורה 2: כפתורי פעולה (יומן + לקוחות) */
+/* שורה 2: כפתורי פעולה (יומן + קריאות) */
 .header-actions { display:flex; gap:10px; padding:0 16px 4px; }
 .header-action-btn { flex:1; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:12px; padding:9px 6px; color:white; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; font-family:inherit; text-decoration:none; transition:all 0.2s; white-space:nowrap; }
 .header-action-btn:hover { background:rgba(255,255,255,0.25); }
@@ -305,10 +305,10 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
 
 <div class="content">
   {% if manager_view %}
-  <!-- חיפוש לקוח — למנהל בלבד -->
+  <!-- חיפוש קריאה — למנהל בלבד -->
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
-    <input class="search-input" id="customerSearch" type="text" placeholder="חפש לקוח..." autocomplete="off" oninput="searchCustomers(this.value)">
+    <input class="search-input" id="customerSearch" type="text" placeholder="חפש קריאה..." autocomplete="off" oninput="searchCustomers(this.value)">
     <div class="search-dropdown" id="searchDropdown"></div>
   </div>
   {% endif %}
@@ -451,7 +451,7 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
 <div class="eilat-overlay" id="eilatOverlay" onclick="if(event.target===this)closeEilat()">
   <div class="eilat-panel">
     <div class="eilat-header">
-      <div class="eilat-title">🏖️ לקוחות אילת ({{ eilat_customers|length }})</div>
+      <div class="eilat-title">🏖️ קריאות אילת ({{ eilat_customers|length }})</div>
       <button class="eilat-close" onclick="closeEilat()">✕</button>
     </div>
     <div class="eilat-body">
@@ -462,7 +462,7 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:{% if store.visit_status == 'done' %}#22c55e{% elif store.visit_status == 'active' %}#f97316{% else %}#38bdf8{% endif %};margin-left:6px;vertical-align:middle"></span>
           {{ store.name }}
           {% if store.visit_status == 'done' %}<span style="font-size:11px;font-weight:600;color:#16a34a;margin-right:6px">✓ טופל</span>
-          {% elif store.visit_status == 'active' %}<span style="font-size:11px;font-weight:600;color:#ea580c;margin-right:6px">● בתוך הלקוח</span>{% endif %}
+          {% elif store.visit_status == 'active' %}<span style="font-size:11px;font-weight:600;color:#ea580c;margin-right:6px">● בתוך הקריאה</span>{% endif %}
         </div>
         <div class="eilat-card-meta">{{ store.city }}{% if store.address %} — {{ store.address }}{% endif %}</div>
       </a>
@@ -526,8 +526,8 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
       <button class="eilat-close" onclick="closeUnplanned()">✕</button>
     </div>
     <div class="eilat-body" style="padding:20px">
-      <p style="font-size:13px;color:#64748b;margin-bottom:14px">חפש לקוח וציין מה עשית אצלו</p>
-      <input id="unplanned-search" type="text" placeholder="🔍 שם לקוח..." autocomplete="off"
+      <p style="font-size:13px;color:#64748b;margin-bottom:14px">חפש קריאה וציין מה עשית אצלה</p>
+      <input id="unplanned-search" type="text" placeholder="🔍 שם קריאה..." autocomplete="off"
         style="width:100%;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:16px;font-family:inherit;outline:none;margin-bottom:8px"
         oninput="searchUnplanned(this.value)">
       <div id="unplanned-results" style="margin-bottom:12px"></div>
@@ -558,7 +558,7 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
       <button class="mycust-close" onclick="closeMyCust()">✕</button>
     </div>
     <div class="mycust-search">
-      <input type="text" id="mycustSearch" placeholder="🔍 חפש לקוח..." oninput="filterMyCust(this.value)" autocomplete="off">
+      <input type="text" id="mycustSearch" placeholder="🔍 חפש קריאה..." oninput="filterMyCust(this.value)" autocomplete="off">
     </div>
     <div class="mycust-body" id="mycustBody"><div class="mycust-empty">⏳ טוען...</div></div>
   </div>
@@ -745,7 +745,7 @@ function toggleCustDates(card, hebDay, custId) {
 function renderMyCust(customers) {
   const body = document.getElementById('mycustBody');
   if (!customers || customers.length === 0) {
-    body.innerHTML = '<div class="mycust-empty">לא נמצאו לקוחות</div>';
+    body.innerHTML = '<div class="mycust-empty">לא נמצאו קריאות</div>';
     return;
   }
   const dayOrder = ['א','ב','ג','ד','ה','ו','ש'];
@@ -763,7 +763,7 @@ function renderMyCust(customers) {
     if (!groups[hd]) return;
     const dayLabel = HEB_DAY_FULL[hd] || hd;
     html += `<div class="mycust-day-group">
-      <div class="mycust-day-label">📅 יום ${dayLabel} (${groups[hd].length} לקוחות)</div>`;
+      <div class="mycust-day-label">📅 יום ${dayLabel} (${groups[hd].length} קריאות)</div>`;
     groups[hd].forEach(c => {
       html += `
         <div class="mycust-card" onclick="toggleCustDates(this,'${hd}',${c.id})">
@@ -778,7 +778,7 @@ function renderMyCust(customers) {
     html += '</div>';
   });
   if (groups['?']) {
-    html += `<div class="mycust-day-group"><div class="mycust-day-label">❓ יום ביקור לא מוגדר (${groups['?'].length} לקוחות)</div>`;
+    html += `<div class="mycust-day-group"><div class="mycust-day-label">❓ יום ביקור לא מוגדר (${groups['?'].length} קריאות)</div>`;
     groups['?'].forEach(c => {
       html += `
         <div class="mycust-card" onclick="showNoDayMsg(this)">
@@ -804,7 +804,7 @@ function showNoDayMsg(card) {
     if (arrow) arrow.textContent = '▼';
     return;
   }
-  datesDiv.innerHTML = '<div style="padding:10px;color:#64748b;font-size:13px;text-align:center">יום ביקור לא מוגדר ללקוח זה</div>';
+  datesDiv.innerHTML = '<div style="padding:10px;color:#64748b;font-size:13px;text-align:center">יום ביקור לא מוגדר לקריאה זו</div>';
   datesDiv.style.display = 'flex';
   card.classList.add('open');
   if (arrow) arrow.textContent = '▲';
@@ -844,7 +844,7 @@ async function pollAgentUnread() {
 pollAgentUnread();
 setInterval(pollAgentUnread, 5000);
 
-// טוען את רשימת הלקוחות ברקע ומעדכן את הכפתור עם הספירה
+// טוען את רשימת הקריאות ברקע ומעדכן את הכפתור עם הספירה
 (async function loadCustCount() {
   try {
     const res  = await fetch('/api/my-customers');
@@ -956,7 +956,7 @@ async function searchCustomers(q) {
       const res = await fetch(`/api/customers/search?q=${encodeURIComponent(q)}`);
       const items = await res.json();
       if (!items.length) {
-        dd.innerHTML = '<div class="search-empty">לא נמצאו לקוחות</div>';
+        dd.innerHTML = '<div class="search-empty">לא נמצאו קריאות</div>';
       } else {
         dd.innerHTML = items.map(c => `
           <div class="search-item">
@@ -998,7 +998,7 @@ async function openHist(customerId, customerName) {
 function renderHist(data) {
   const body = document.getElementById('histBody');
   if (!data.visits || !data.visits.length) {
-    body.innerHTML = '<div class="hist-empty">אין היסטוריית ביקורים ללקוח זה</div>'; return;
+    body.innerHTML = '<div class="hist-empty">אין היסטוריית ביקורים לקריאה זו</div>'; return;
   }
   body.innerHTML = data.visits.map(v => {
     const comments = v.comments.map(c => `
@@ -1055,7 +1055,7 @@ function searchUnplanned(q) {
     const data = await res.json();
     const customers = Array.isArray(data) ? data : (data.customers || []);
     if (customers.length === 0) {
-      resultsEl.innerHTML = '<div style="padding:10px;color:#94a3b8;font-size:14px;text-align:center">לא נמצאו לקוחות</div>';
+      resultsEl.innerHTML = '<div style="padding:10px;color:#94a3b8;font-size:14px;text-align:center">לא נמצאו קריאות</div>';
       return;
     }
     resultsEl.innerHTML = '';
@@ -1092,7 +1092,7 @@ async function submitUnplanned() {
   const notes = document.getElementById('unplanned-notes').value.trim();
   const msgEl = document.getElementById('unplanned-msg');
   if (!_unplannedCustomerId) {
-    msgEl.textContent = '⚠️ יש לבחור לקוח קודם';
+    msgEl.textContent = '⚠️ יש לבחור קריאה קודם';
     msgEl.style.color = '#dc2626'; msgEl.style.display = 'block'; return;
   }
   if (!notes) {
