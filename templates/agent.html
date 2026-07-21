@@ -271,7 +271,7 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
   <div class="header-actions">
     <button class="header-action-btn" onclick="toggleCal()">📅 יומן פגישות</button>
     {% if not manager_view %}
-    <button class="header-action-btn" onclick="openMyCust()">👥 הלקוחות שלי</button>
+    <button class="header-action-btn" onclick="openMyCust()">📋 קריאות יומיות</button>
     {% endif %}
   </div>
 
@@ -554,7 +554,7 @@ body { font-family:'Segoe UI',system-ui,Arial,sans-serif; background:var(--bg); 
 <div class="mycust-overlay" id="mycustOverlay" onclick="if(event.target===this)closeMyCust()">
   <div class="mycust-panel">
     <div class="mycust-header">
-      <div class="mycust-title">👥 הלקוחות שלי</div>
+      <div class="mycust-title">📋 קריאות יומיות</div>
       <button class="mycust-close" onclick="closeMyCust()">✕</button>
     </div>
     <div class="mycust-search">
@@ -853,7 +853,7 @@ setInterval(pollAgentUnread, 5000);
     const count = _mycustAll.length;
     const btn = document.querySelector('.header-action-btn[onclick="openMyCust()"]');
     if (btn && count > 0) {
-      btn.innerHTML = `👥 הלקוחות שלי <span style="background:white;color:var(--primary);border-radius:12px;padding:1px 8px;font-size:12px;font-weight:800;margin-right:4px">${count}</span>`;
+      btn.innerHTML = `📋 קריאות יומיות <span style="background:white;color:var(--primary);border-radius:12px;padding:1px 8px;font-size:12px;font-weight:800;margin-right:4px">${count}</span>`;
     }
   } catch(e) {}
 })();
